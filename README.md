@@ -25,3 +25,6 @@
 Notion: https://kimsoobin1602.notion.site/217957a41faf8011aaa8da76eec79cb0?source=copy_link
 
 구글폼: https://forms.gle/Py3kLEcSf1SBSGG78
+
+
+[docs] 과제 1 - Readme 수정하기 (양우혁)
