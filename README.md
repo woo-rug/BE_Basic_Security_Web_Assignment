@@ -28,6 +28,3 @@ Notion: https://kimsoobin1602.notion.site/217957a41faf8011aaa8da76eec79cb0?sourc
 
 
 [docs] 과제 1 - Readme 수정하기 (양우혁)
-
-[docs] 과제 2
-양우혁 / 컴퓨터공학전공 / 2021111973
