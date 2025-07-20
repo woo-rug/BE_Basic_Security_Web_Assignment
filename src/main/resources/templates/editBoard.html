@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>게시글 수정</title>
+</head>
+<body>
+<h1>게시글 수정</h1>
+<p th:if="${errorMessage}" style="color: red;" th:text="${errorMessage}"></p>
+
+<form th:action="@{/boards/{id}/edit(id=${board.id})}" method="post">
+  <input type="hidden" name="id" th:value="${board.id}" />
+  <p>
+    <label for="editTitle">제목:</label>
+    <input type="text" id="editTitle" name="title" th:value="${board.title}" required />
+  </p>
+  <p>
+    <label for="editContent">내용:</label>
+    <textarea id="editContent" name="content" required th:text="${board.content}"></textarea>
+  </p>
+  <p>
+    <label for="editWriter">작성자:</label>
+    <input type="text" id="editWriter" name="writer" th:value="${board.writer}" readonly /> </p>
+  <p>
+    <label for="editPassword">비밀번호:</label>
+    <input type="password" id="editPassword" name="password" required />
+  </p>
+  <button type="submit">수정</button>
+</form>
+<a th:href="@{/boards/{id}(id=${board.id})}">취소</a>
+<a href="/boards">목록으로 돌아가기</a>
+</body>
+</html>
