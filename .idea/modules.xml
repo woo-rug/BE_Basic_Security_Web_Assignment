@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/bulletinboard.main.iml" filepath="$PROJECT_DIR$/.idea/modules/bulletinboard.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/BE_Basic_Security_Web_Assignment.iml" filepath="$PROJECT_DIR$/.idea/BE_Basic_Security_Web_Assignment.iml" />
     </modules>
   </component>
 </project>
