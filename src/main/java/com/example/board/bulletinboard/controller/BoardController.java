@@ -1,6 +1,9 @@
 package com.example.board.bulletinboard.controller;
 
 import com.example.board.bulletinboard.domain.Board;
+import com.example.board.bulletinboard.dto.BoardCreateRequest;
+import com.example.board.bulletinboard.dto.BoardUpdateRequest;
+import com.example.board.bulletinboard.dto.PasswordRequest;
 import com.example.board.bulletinboard.service.BoardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -40,12 +43,14 @@ public class BoardController {
 
     // 게시글 작성 (POST /api/posts)
     @PostMapping
-    public ResponseEntity<Board> saveBoard(@RequestParam String title,
-                                           @RequestParam String content,
-                                           @RequestParam String writer,
-                                           @RequestParam String password) {
+    public ResponseEntity<Board> saveBoard(@RequestBody BoardCreateRequest request) {
         try {
-            Board newBoard = boardService.createBoard(title, content, writer, password);
+           Board newBoard = boardService.createBoard(
+                   request.getTitle(),
+                   request.getContent(),
+                   request.getWriter(),
+                   request.getPassword()
+           );
             return new ResponseEntity<>(newBoard, HttpStatus.CREATED);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시글 작성 실패 " + e.getMessage());
@@ -56,11 +61,14 @@ public class BoardController {
     @PatchMapping("/{postId}")
     public ResponseEntity<Optional<Board>> updateBoard(
             @PathVariable Long postId,
-            @RequestParam String title,
-            @RequestParam String content,
-            @RequestParam String password) {
+            @RequestBody BoardUpdateRequest request) {
         try{
-            Optional<Board> updatedBoard = boardService.updateBoard(postId, title, content, password);
+            Optional<Board> updatedBoard = boardService.updateBoard(
+                    postId,
+                    request.getTitle(),
+                    request.getContent(),
+                    request.getPassword()
+            );
             return ResponseEntity.ok(updatedBoard);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
@@ -72,9 +80,9 @@ public class BoardController {
     // 게시글 삭제 (DELETE /api/posts/{postId})
     @DeleteMapping("/{postId}")
     public ResponseEntity<Map<String, String>> deleteBoard(@PathVariable Long postId,
-                                                           @RequestParam String password) {
+                                                           @RequestBody PasswordRequest request) {
         try{
-            boardService.deleteBoard(postId, password);
+            boardService.deleteBoard(postId, request.getPassword());
             return ResponseEntity.ok(Map.of("message", "게시글이 성공적으로 삭제되었습니다."));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
