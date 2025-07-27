@@ -3,16 +3,17 @@ package com.example.board.bulletinboard.controller;
 import com.example.board.bulletinboard.domain.Board;
 import com.example.board.bulletinboard.service.BoardService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-@Controller
-@RequestMapping("/boards")
+@RestController
+@RequestMapping("/api/posts")
 public class BoardController {
 
     private final BoardService boardService;
@@ -22,97 +23,63 @@ public class BoardController {
         this.boardService = boardService;
     }
 
-    // 전체 조회
+    // 전체 조회 (GET /api/posts)
     @GetMapping
-    public String listBoards(Model model){
+    public ResponseEntity<List<Board>> listBoards(){
         List<Board> boards = boardService.findAllBoards();
-        model.addAttribute("boards", boards);
-        return "boardList";
+        return ResponseEntity.ok(boards);
     }
 
-    // 단 건 조회
-    @GetMapping("/{id}")
-    public String viewBoard(Model model, @PathVariable long id, RedirectAttributes redirectAttributes){
-        Optional<Board> board = boardService.findBoardById(id);
-        if(board.isPresent()) {
-            model.addAttribute("board", board.get());
-            return "boardDetail";
-        } else {
-            redirectAttributes.addFlashAttribute("errorMessage", "해당 게시글이 없습니다.");
-            return "redirect:/boards";
-        }
+    // 단 건 조회 (GET /api/posts/{id}
+    @GetMapping("/{postId}")
+    public ResponseEntity<Board> viewBoard(@PathVariable long postId){
+        return boardService.findBoardById(postId)
+                .map(ResponseEntity::ok)
+                .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 게시글이 없습니다. " + postId));
     }
 
-    // 새 글 작성
-    @GetMapping("/new")
-    public String newBoard(Model model){
-        return "newBoard";
-    }
-
-    // 게시글 작성 처리
+    // 게시글 작성 (POST /api/posts)
     @PostMapping
-    public String saveBoard(@RequestParam String title,
-                            @RequestParam String content,
-                            @RequestParam String writer,
-                            @RequestParam String password,
-                            RedirectAttributes redirectAttributes) {
+    public ResponseEntity<Board> saveBoard(@RequestParam String title,
+                                           @RequestParam String content,
+                                           @RequestParam String writer,
+                                           @RequestParam String password) {
         try {
-            boardService.createBoard(title, content, writer, password);
-            redirectAttributes.addFlashAttribute("message", "게시글이 성공적으로 작성되었습니다.");
-            return "redirect:/boards";
+            Board newBoard = boardService.createBoard(title, content, writer, password);
+            return new ResponseEntity<>(newBoard, HttpStatus.CREATED);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "게시글 작성 실패: " + e.getMessage());
-            return "redirect:/boards/new"; // 실패 시 다시 작성 폼으로
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시글 작성 실패 " + e.getMessage());
         }
     }
 
-    @GetMapping("/{id}/edit")
-    public String editBoard(@PathVariable long id, Model model, RedirectAttributes redirectAttributes){
-        Optional<Board> board = boardService.findBoardById(id);
-        if(board.isPresent()) {
-            model.addAttribute("board", board.get());
-            return "editBoard";
-        } else {
-            redirectAttributes.addFlashAttribute("errorMessage", "해당 게시글이 없습니다.");
-            return "redirect:/boards";
-        }
-    }
-
-    @PostMapping("/{id}/edit")
-    public String updateBoard(@PathVariable Long id,
-                              @RequestParam String title,
-                              @RequestParam String content,
-                              @RequestParam String password,
-                              RedirectAttributes redirectAttributes) {
-        try {
-            boardService.updateBoard(id, title, content, password);
-            redirectAttributes.addFlashAttribute("message", "게시글이 성공적으로 수정되었습니다.");
-            return "redirect:/boards/" + id;
-        } catch (IllegalArgumentException e) { // 비밀번호 오류 시
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/boards/" + id + "/edit";
-        } catch (Exception e) { // 이외의 오류
-            redirectAttributes.addFlashAttribute("errorMessage", "게시글 수정 실패: " + e.getMessage());
-            return "redirect:/boards/" + id + "/edit";
-        }
-    }
-
-    // 게시글 삭제
-    @PostMapping("/{id}/delete")
-    public String deleteBoard(@PathVariable Long id,
-                              @RequestParam String password, // 삭제 시 비밀번호 입력 받기
-                              RedirectAttributes redirectAttributes) {
-        try {
-            boardService.deleteBoard(id, password);
-            redirectAttributes.addFlashAttribute("message", "게시글이 성공적으로 삭제되었습니다.");
-            return "redirect:/boards";
+    // 게시글 수정 (PATCH api/posts/{postId}
+    @PatchMapping("/{postId}")
+    public ResponseEntity<Optional<Board>> updateBoard(
+            @PathVariable Long postId,
+            @RequestParam String title,
+            @RequestParam String content,
+            @RequestParam String password) {
+        try{
+            Optional<Board> updatedBoard = boardService.updateBoard(postId, title, content, password);
+            return ResponseEntity.ok(updatedBoard);
         } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/boards/" + id; // 비밀번호 오류 시 상세 페이지로 다시
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "게시글 삭제 실패: " + e.getMessage());
-            return "redirect:/boards/" + id;
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
+        } catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시글 수정 실패 " + e.getMessage());
         }
     }
 
+    // 게시글 삭제 (DELETE /api/posts/{postId})
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<Map<String, String>> deleteBoard(@PathVariable Long postId,
+                                                           @RequestParam String password) {
+        try{
+            boardService.deleteBoard(postId, password);
+            return ResponseEntity.ok(Map.of("message", "게시글이 성공적으로 삭제되었습니다."));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getMessage());
+        } catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시글 삭제 실패 " + e.getMessage());
+        }
+    }
 }
